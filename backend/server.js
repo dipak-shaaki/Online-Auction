@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const User= require('./models/User');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(cors());
@@ -19,3 +21,25 @@ app.get('/', (req, res) => res.send('Auction backend running!'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+const createDefaultAdmin = async () => {
+  const adminEmail = 'admin@auction.com';
+  const adminExists = await User.findOne({ email: adminEmail });
+
+  if (!adminExists) {
+    const hashedPassword = await bcrypt.hash('admin123', 12);
+    await User.create({
+      name: 'Auction Admin',
+      email: adminEmail,
+      password: hashedPassword,
+      location: 'Global',
+      currency: 'USD',
+      role: 'admin'
+    });
+    console.log('Default admin account created');
+  } else {
+    console.log('Admin already exists');
+  }
+};
+
+createDefaultAdmin();
