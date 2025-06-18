@@ -1,5 +1,5 @@
 const express = require('express');
-const http = require('http'); //  Required
+const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -7,15 +7,13 @@ require('dotenv').config();
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 
-
 const app = express();
-
-
-const server = http.createServer(app); //  create server manually
+const server = http.createServer(app); // Correct server
 const io = socketIo(server, {
   cors: { origin: '*' }
 });
-// Attach Socket.IO to every request
+
+// Attach io to every request
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -24,20 +22,16 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
+// Routes
 const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
-
 const auctionRoutes = require('./routes/auctionRoutes');
-app.use('/api/items', auctionRoutes);
-
 const bidRoutes = require('./routes/bidRoutes');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/items', auctionRoutes);
 app.use('/api/bids', bidRoutes);
 
-const updateAuctionStatuses = require('./utils/auctionScheduler');
-setInterval(updateAuctionStatuses, 60 * 1000); // every 1 minute
-
-
-// Socket.IO connection logic
+// Socket.IO connection
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
@@ -47,20 +41,27 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    console.log(' User disconnected');
   });
 });
 
-
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
+  .then(() => console.log(' MongoDB connected'))
+  .catch(err => console.error(' MongoDB connection error:', err));
 
+// Homepage
 app.get('/', (req, res) => res.send('Auction backend running!'));
 
+// Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
+// Schedule Auction Status Updates
+const updateAuctionStatuses = require('./utils/auctionScheduler');
+setInterval(() => updateAuctionStatuses(io), 60 * 1000); // pass io to scheduler
+
+// Create default admin
 const createDefaultAdmin = async () => {
   const adminEmail = 'admin@auction.com';
   const adminExists = await User.findOne({ email: adminEmail });
@@ -75,9 +76,9 @@ const createDefaultAdmin = async () => {
       currency: 'USD',
       role: 'admin'
     });
-    console.log('Default admin account created');
+    console.log(' Default admin account created');
   } else {
-    console.log('Admin already exists');
+    console.log(' Admin already exists');
   }
 };
 
