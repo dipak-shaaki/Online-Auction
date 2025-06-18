@@ -4,10 +4,10 @@ const AuctionItem = require('../models/AuctionItem');
 const auth = require('../middleware/authMiddleware');
 
 // Upload new item (requires login)
-router.post('/', auth, async (req, res) => {
+router.post('/upload', auth, async (req, res) => {
   try {
     const {
-      title, description, category, images, startingPrice, startTime, endTime, auctionType
+      title, description, category, images, startingPrice, startTime, endTime
     } = req.body;
 
     const newItem = new AuctionItem({
@@ -19,7 +19,6 @@ router.post('/', auth, async (req, res) => {
       seller: req.user.id,
       startTime,
       endTime,
-      auctionType: auctionType || 'time-based',
       status: 'upcoming'
     });
 
