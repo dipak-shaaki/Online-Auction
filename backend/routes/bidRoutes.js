@@ -3,6 +3,7 @@ const router = express.Router();
 const Bid = require('../models/Bid');
 const AuctionItem = require('../models/AuctionItem');
 const auth = require('../middleware/authMiddleware');
+const { isUser } = require('../middleware/roleMiddleware');
 
 // Place a bid
 router.post('/:auctionId', auth, async (req, res) => {
@@ -54,5 +55,24 @@ router.post('/:auctionId', auth, async (req, res) => {
     res.status(500).json({ message: 'Error placing bid' });
   }
 });
+
+router.post('/:auctionId', auth, isUser, async (req, res) => {
+  const { amount } = req.body;
+  const auctionId = req.params.auctionId;
+
+  try {
+    const item = await AuctionItem.findById(auctionId);
+    if (!item) return res.status(404).json({ message: 'Auction item not found' });
+
+    if (String(item.owner) === String(req.user.id)) {
+      return res.status(403).json({ message: 'You cannot bid on your own item' });
+    }
+
+    // ... (rest of your bid logic)
+  } catch (err) {
+    res.status(500).json({ message: 'Error placing bid' });
+  }
+});
+
 
 module.exports = router;

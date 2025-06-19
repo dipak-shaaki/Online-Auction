@@ -38,3 +38,19 @@ router.post('/demote/:userId', auth, adminCheck, async (req, res    ) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Suspend a user (only by existing admin)
+
+router.put('/suspend/:userId', auth, isAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.isSuspended = !user.isSuspended;
+    await user.save();
+
+    res.json({ message: `User ${user.isSuspended ? 'suspended' : 'unsuspended'}` });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update user status' });
+  }
+});
